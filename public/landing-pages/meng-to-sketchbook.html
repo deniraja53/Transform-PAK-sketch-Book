@@ -172,76 +172,96 @@ button{font:inherit}
 }
 .sb-full{position:absolute;inset:0}
 .sb-full img{width:100%;height:100%;object-fit:cover;display:block}
-.sb-half{position:absolute;top:0;bottom:0;width:50%;overflow-x:clip;overflow-y:visible}
-.sb-half.left{left:0}
-.sb-half.right{left:50%}
-.sb-half-img{width:200%;max-width:none;height:100%;object-fit:cover;display:block}
-.sb-half-img.right{margin-left:-100%}
-/* the shadow the lifting leaf throws onto the page beneath it */
-.gutter-shade{
-  position:absolute;top:var(--pg,21.8%);bottom:var(--pg,21.8%);width:46%;
-  pointer-events:none;opacity:calc(var(--shade,0) * .62);
-  -webkit-mask-image:linear-gradient(180deg,transparent 0,#000 5.2%,#000 94.8%,transparent 100%);
-  mask-image:linear-gradient(180deg,transparent 0,#000 5.2%,#000 94.8%,transparent 100%);
-}
-.gutter-shade.left{right:0;background:linear-gradient(270deg,rgba(52,38,20,.30),rgba(52,38,20,0) 82%)}
-.gutter-shade.right{left:0;background:linear-gradient(90deg,rgba(52,38,20,.24),rgba(52,38,20,0) 82%)}
 
-/* ---- the turning leaf: nested strips forming a curved surface ---- */
+/* Base underlying page during 3D flip */
+.sb-under{position:absolute;inset:0;z-index:2;overflow:hidden;background:#fff}
+.sb-under img{width:100%;height:100%;object-fit:cover;display:block}
+.under-shade{
+  position:absolute;inset:0;pointer-events:none;z-index:3;
+  opacity:0;will-change:opacity,background;
+}
+
+/* ---- 3D Page Flip Leaf with Cantilever Curvature ---- */
 .curl{
-  position:absolute;top:0;height:100%;
-  width:calc(var(--bw,0px) * var(--span));
-  transform-style:preserve-3d;z-index:6;
-  filter: drop-shadow(calc(var(--shade,0) * -14px) calc(var(--shade,0) * 16px) calc(var(--shade,0) * 26px) rgba(38,24,10,calc(var(--shade,0) * 0.44)));
+  position:absolute;top:0;bottom:0;left:0;
+  width:calc(var(--bw,0px) * var(--span,1));
+  height:100%;
+  transform-style:preserve-3d;z-index:10;
+  will-change:transform,filter;
+}
+.curl.next{
+  left:0;transform-origin:left center;
+  transform:rotateY(calc(-1 * var(--tt,0deg)));
 }
 .curl.prev{
-  filter: drop-shadow(calc(var(--shade,0) * 14px) calc(var(--shade,0) * 16px) calc(var(--shade,0) * 26px) rgba(38,24,10,calc(var(--shade,0) * 0.44)));
+  left:0;transform-origin:left center;
+  transform:rotateY(calc(-1 * var(--tt,0deg)));
 }
-.curl.next{left:50%;transform-origin:left center;transform:rotateY(calc(-1 * var(--tt,0deg)))}
-.curl.prev{right:50%;transform-origin:right center;transform:rotateY(var(--tt,0deg))}
+
+/* Directional Flip Class States */
+.sb-book.flip-forward{
+  pointer-events:none;
+}
+.sb-book.flip-forward .curl.next{
+  will-change:transform,filter;
+}
+.sb-book.flip-backward{
+  pointer-events:none;
+}
+.sb-book.flip-backward .curl.prev{
+  will-change:transform,filter;
+}
+
+@keyframes pageFlipForwardKeyframe {
+  0%   { filter: drop-shadow(0px 2px 6px rgba(25,14,6,.10)); }
+  50%  { filter: drop-shadow(-16px 20px 32px rgba(25,14,6,.40)); }
+  100% { filter: drop-shadow(4px 4px 10px rgba(25,14,6,.12)); }
+}
+@keyframes pageFlipBackwardKeyframe {
+  0%   { filter: drop-shadow(-4px 4px 10px rgba(25,14,6,.12)); }
+  50%  { filter: drop-shadow(16px 20px 32px rgba(25,14,6,.40)); }
+  100% { filter: drop-shadow(0px 2px 6px rgba(25,14,6,.10)); }
+}
+.sb-book.flip-forward #activeCurl{
+  animation: pageFlipForwardKeyframe 0.65s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+.sb-book.flip-backward #activeCurl{
+  animation: pageFlipBackwardKeyframe 0.65s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
 .strip{
   position:absolute;top:0;height:100%;
-  width:calc(var(--bw,0px) * var(--span) / var(--n));
+  width:calc(var(--bw,0px) * var(--span,1) / var(--n,20));
   transform-style:preserve-3d;
+  transform-origin:left center;
+  left:0;
 }
-.curl.next .strip{transform-origin:left center}
-.curl.prev .strip{transform-origin:right center}
-.curl.next>.strip{left:0}
-.curl.prev>.strip{right:0;left:auto}
-.curl.next .strip .strip{left:100%;transform:rotateY(calc(var(--td,0deg) * var(--w,1)))}
-.curl.prev .strip .strip{right:100%;transform:rotateY(calc(-1 * var(--td,0deg) * var(--w,1)))}
+.strip .strip{
+  left:100%;
+  transform:rotateY(calc(-1 * var(--td,0deg) * var(--w,1)));
+}
 .face{
-  position:absolute;top:0;bottom:0;left:0;right:-1.1px;
+  position:absolute;top:0;bottom:0;left:0;right:-1.2px;
   backface-visibility:hidden;-webkit-backface-visibility:hidden;
   background-repeat:no-repeat;background-size:var(--bw,0px) 100%;
+  overflow:hidden;
 }
-.face.back{transform:rotateY(180deg)}
-.face .sh,.face .gl{
-  -webkit-mask-image:linear-gradient(180deg,transparent 0,#000 5.2%,#000 94.8%,transparent 100%);
-  mask-image:linear-gradient(180deg,transparent 0,#000 5.2%,#000 94.8%,transparent 100%);
+.face.front{
+  z-index:2;
 }
-.strip.edge .face .sh,.strip.edge .face .gl{
-  -webkit-mask-image:linear-gradient(180deg,transparent 0,#000 9%,#000 91%,transparent 100%),var(--hf);
-  mask-image:linear-gradient(180deg,transparent 0,#000 9%,#000 91%,transparent 100%),var(--hf);
-  -webkit-mask-composite:source-in;mask-composite:intersect;
+.face.back{
+  z-index:1;
+  transform:rotateY(180deg);
+  background:linear-gradient(135deg, #ffffff 0%, #f9f7f2 40%, #ede6d8 100%);
+  box-shadow:inset 16px 0 26px rgba(45,30,12,.15);
 }
-.curl.next .strip.edge .face.front,.curl.prev .strip.edge .face.back{
-  --hf:linear-gradient(90deg,#000 0 22%,transparent 96%);
-}
-.curl.next .strip.edge .face.back,.curl.prev .strip.edge .face.front{
-  --hf:linear-gradient(270deg,#000 0 22%,transparent 96%);
-}
-.face .sh{position:absolute;left:0;right:0;top:var(--pg,21.8%);bottom:var(--pg,21.8%);pointer-events:none}
-.curl.next .face.front .sh,.curl.prev .face.back .sh{
-  background:linear-gradient(90deg,rgba(58,43,20,var(--a1,0)),rgba(58,43,20,var(--a2,0)));
-}
-.curl.next .face.back .sh,.curl.prev .face.front .sh{
-  background:linear-gradient(90deg,rgba(58,43,20,var(--a2,0)),rgba(58,43,20,var(--a1,0)));
+.face .sh{
+  position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(90deg,rgba(40,25,10,var(--a1,0)),rgba(40,25,10,var(--a2,0)));
 }
 .face .gl{
-  position:absolute;left:0;right:0;top:var(--pg,21.8%);bottom:var(--pg,21.8%);
-  pointer-events:none;background:#fffaf0;
-  opacity:calc(var(--shade,0) * var(--lit,1) * var(--lit,1) * .20);
+  position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(135deg,rgba(255,255,255,var(--gl,0)) 0%,rgba(255,255,255,0) 80%);
 }
 
 /* ---- the loupe: a real magnifier lying on the page.  Pick it up and
@@ -569,7 +589,7 @@ const PAGES=[
   {file:'slides/37.png', title:'Karya 37', place:'Halaman 37'},
   {file:'slides/38.png', title:'Karya 38', place:'Halaman 38'}
 ];
-PAGES.forEach(p=>p.url=(p.file.startsWith('http://')||p.file.startsWith('https://'))?p.file:DIR+p.file);
+PAGES.forEach(p=>p.url=((p.file.startsWith('http://')||p.file.startsWith('https://'))?p.file:DIR+p.file)+'?v=2');
 const M=PAGES.length, LAND=0;
 
 const wrap=document.getElementById('sbWrap');
@@ -581,44 +601,36 @@ const hint=document.getElementById('sbHint');
 const REDUCED=matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 /* ------------------------------------------------ the turning leaf */
-const N=24;            /* strips — high resolution for ultra-smooth curve */
-const SPAN=0.449;      /* gutter → outer page edge, as a fraction     */
-const BETA=0.72;       /* peak curl of the arc, radians              */
-let idx=0, turn=null;  /* turn = {dir, from, to, t}                   */
-let strips=[];         /* the chain, kept for per-frame lighting       */
+const N=20;            /* strips — high resolution for ultra-smooth 3D curve */
+const SPAN=1.0;        /* spans the entire 16:9 presentation slide */
+const BETA=0.64;       /* peak curl of the arc, radians */
+let idx=0, turn=null;  /* turn = {dir, from, to, t} */
+let strips=[];         /* the chain, kept for per-frame lighting */
 
 function el(t,c){const e=document.createElement(t);if(c)e.className=c;return e}
-function imgEl(i,side){
-  const im=new Image();im.className='sb-half-img '+side;
-  im.draggable=false;im.alt='';im.src=PAGES[i].url;return im;
-}
 
-function halfEl(pos,i){
-  const d=el('div','sb-half '+pos);
-  d.appendChild(imgEl(i,pos));
-  d.appendChild(el('div','gutter-shade '+pos));
-  return d;
-}
-/* build the strip chain once per turn; background offsets are pure
-   geometry, so they never need touching again while it animates */
+/* build the strip chain once per turn; background offsets are pure geometry */
 function buildCurl(dir,from,to){
   strips=[];
   const c=el('div','curl '+dir);
+  c.id='activeCurl';
   c.style.setProperty('--n',N);
   c.style.setProperty('--span',SPAN);
   let host=c;
 
-  /* Progressive cantilever beam elasticity weights:
+  /* Progressive cantilever elasticity weights:
      spine binding is stiffer, outer edge is more pliable */
   let totalW=0;
   const rawWeights=[];
   for(let i=0;i<N;i++){
     const norm=i/(N-1);
-    const w=0.58+0.84*Math.pow(norm,1.25);
+    const w=0.45+0.95*Math.pow(norm,1.35);
     rawWeights.push(w);
     totalW+=w;
   }
   const normFactor=N/totalW;
+
+  const url = dir==='next'?PAGES[from].url:PAGES[to].url;
 
   for(let i=0;i<N;i++){
     const s=el('div','strip');
@@ -626,17 +638,11 @@ function buildCurl(dir,from,to){
     const weight=rawWeights[i]*normFactor;
     s.style.setProperty('--w',weight.toFixed(3));
     s._w=weight;
-    const gut='calc(var(--bw) * 0.5)';
-    const sw='calc(var(--bw) * '+SPAN+' / '+N+')';
-    const A='calc(-1 * ('+gut+' + '+i+' * '+sw+'))';         /* faces the from-page  */
-    const B='calc('+(i+1)+' * '+sw+' - '+gut+')';            /* faces the to-page    */
+    const bgPos='calc(-1 * '+i+' * var(--bw) / '+N+')';
     const f=el('div','face front'), b=el('div','face back');
-    const dress=(e,url,px)=>{
-      e.style.backgroundImage='url('+url+')';
-      e.style.backgroundPositionX=px;
-    };
-    dress(f,PAGES[from].url, dir==='next'?A:B);
-    dress(b,PAGES[to].url,   dir==='next'?B:A);
+    f.style.backgroundImage='url('+url+')';
+    f.style.backgroundPositionX=bgPos;
+
     f.appendChild(el('div','sh'));f.appendChild(el('div','gl'));
     b.appendChild(el('div','sh'));b.appendChild(el('div','gl'));
     s.appendChild(f);s.appendChild(b);
@@ -646,39 +652,81 @@ function buildCurl(dir,from,to){
   }
   return c;
 }
+
 function applyTurn(t,vel){
   vel=vel||0;
-  /* Natural paper curl envelope:
-     peels cleanly at low t, maintains curved arch through apex, then gently unfolds */
+  if(!turn)return;
+  const dir=turn.dir;
   const sinT=Math.sin(Math.PI*t);
-  const envelope=Math.pow(Math.max(0,sinT),0.82)*(1+0.18*Math.sin(2*Math.PI*t));
-  
-  /* Aerodynamic inertia flex: faster speed dynamically deepens the curl */
-  const dynamicFlex=1+0.16*Math.min(2.2,Math.abs(vel));
+  const envelope=Math.pow(Math.max(0,sinT),0.85);
+  const dynamicFlex=1+0.12*Math.min(2.0,Math.abs(vel));
   const beta=BETA*envelope*dynamicFlex;
 
-  const th=Math.PI*t;                       /* how far the leaf has swung */
+  let ttDeg=0, tdDeg=0;
   const D=180/Math.PI;
-  const tt=th+beta, td=(2*beta)/N;
-  sb3d.style.setProperty('--tt',(tt*D).toFixed(2)+'deg');
-  sb3d.style.setProperty('--td',(td*D).toFixed(3)+'deg');
+
+  if(dir==='next'){
+    const th=t*Math.PI;
+    const tt=th+beta;
+    const td=(2*beta)/N;
+    ttDeg=tt*D;
+    tdDeg=td*D;
+  }else{
+    const th=(1-t)*Math.PI;
+    const tt=Math.max(0, th-beta);
+    const td=(2*beta)/N;
+    ttDeg=tt*D;
+    tdDeg=td*D;
+  }
+
+  sb3d.style.setProperty('--tt',ttDeg.toFixed(2)+'deg');
+  sb3d.style.setProperty('--td',tdDeg.toFixed(3)+'deg');
   sb3d.style.setProperty('--shade',Math.pow(Math.max(0,sinT),0.88).toFixed(3));
   fadeCaption(t);
 
-  /* Physically accurate progressive lighting across the cantilever curve */
-  let cumAngle=tt;
+  /* 1. Dynamic Moving Under-Shadow on the exposed base slide */
+  const underShade=document.getElementById('underShade');
+  if(underShade){
+    const shadeAlpha=Math.pow(sinT,0.85)*0.55;
+    const sweepPercent=(t*80+10).toFixed(1);
+    underShade.style.opacity=shadeAlpha.toFixed(3);
+    underShade.style.background=dir==='next'
+      ? `linear-gradient(90deg, rgba(28,16,6,0.48) 0%, rgba(35,20,8,0.30) ${sweepPercent}%, rgba(20,10,4,0.06) calc(${sweepPercent}% + 22%), transparent calc(${sweepPercent}% + 36%))`
+      : `linear-gradient(90deg, rgba(28,16,6,0.20) 0%, rgba(35,20,8,0.38) calc(${sweepPercent}% - 14%), rgba(20,10,4,0.46) ${sweepPercent}%, transparent calc(${sweepPercent}% + 18%))`;
+  }
+
+  /* 2. Dynamic Drop Shadow of the lifted page */
+  const activeCurl=document.getElementById('activeCurl');
+  if(activeCurl){
+    const shadowLift=Math.pow(sinT,0.88);
+    const blur=(shadowLift*34+6).toFixed(1);
+    const yOff=(shadowLift*20+2).toFixed(1);
+    const xOff=(dir==='next'?(-shadowLift*18):(shadowLift*18)).toFixed(1);
+    const alpha=(shadowLift*0.42).toFixed(3);
+    activeCurl.style.filter=`drop-shadow(${xOff}px ${yOff}px ${blur}px rgba(26, 14, 6, ${alpha}))`;
+  }
+
+  /* 3. Dynamic Fold Shading & Specular Glare across the cantilever curve */
+  let cumAngle=(ttDeg*Math.PI)/180;
+  const tdRad=(tdDeg*Math.PI)/180;
   for(let i=0;i<strips.length;i++){
     const w=strips[i]._w||1;
-    const stripAngle=td*w;
-    const l1=Math.abs(Math.cos(cumAngle));
-    const l2=Math.abs(Math.cos(cumAngle-stripAngle));
+    const stripAngle=tdRad*w;
+    const midAngle=cumAngle-stripAngle*0.5;
     cumAngle-=stripAngle;
+
+    const l1=Math.abs(Math.cos(midAngle));
+    const shadowA1=((1-l1)*0.58).toFixed(3);
+    const shadowA2=((1-Math.abs(Math.cos(midAngle-stripAngle)))*0.58).toFixed(3);
+    const glare=(Math.pow(Math.max(0,Math.sin(midAngle)),3)*0.38).toFixed(3);
+
     const st=strips[i].style;
-    st.setProperty('--lit',l1.toFixed(3));
-    st.setProperty('--a1',((1-l1)*.64).toFixed(3));
-    st.setProperty('--a2',((1-l2)*.64).toFixed(3));
+    st.setProperty('--a1',shadowA1);
+    st.setProperty('--a2',shadowA2);
+    st.setProperty('--gl',glare);
   }
 }
+
 function paint(){
   book.textContent='';
   if(!turn){
@@ -688,14 +736,21 @@ function paint(){
     f.appendChild(im);book.appendChild(f);
     sb3d.style.setProperty('--shade','0');
   }else{
-    const next=turn.dir==='next';
-    book.appendChild(halfEl('left', next?turn.from:turn.to));
-    book.appendChild(halfEl('right',next?turn.to:turn.from));
+    const under=el('div','sb-under');
+    const underImg=new Image();
+    underImg.src=turn.dir==='next'?PAGES[turn.to].url:PAGES[turn.from].url;
+    underImg.draggable=false;
+    under.appendChild(underImg);
+    const shade=el('div','under-shade');
+    shade.id='underShade';
+    under.appendChild(shade);
+    book.appendChild(under);
+
     book.appendChild(buildCurl(turn.dir,turn.from,turn.to));
-    applyTurn(turn.t);
+    applyTurn(turn.t,0);
   }
   const a=el('button','sb-zone sb-prev'),b=el('button','sb-zone sb-next');
-  a.setAttribute('aria-label','previous page');b.setAttribute('aria-label','next page');
+  a.setAttribute('aria-label','halaman sebelumnya');b.setAttribute('aria-label','halaman berikutnya');
   book.appendChild(a);book.appendChild(b);
   layout();
   caption();
@@ -710,15 +765,16 @@ function paint(){
     }
   });
 }
+
 function caption(){
   capBox.textContent='';
   capOut=capIn=null;
   if(turn){
-    capOut=el('p','sb-caption live');capOut.textContent=PAGES[turn.from].title;capBox.appendChild(capOut);
-    capIn=el('p','sb-caption live');capIn.textContent=PAGES[turn.to].title;capBox.appendChild(capIn);
+    capOut=el('p','sb-caption live');capOut.textContent=`Halaman ${turn.from+1} dari ${M} · PPT Transformasi PAK`;capBox.appendChild(capOut);
+    capIn=el('p','sb-caption live');capIn.textContent=`Halaman ${turn.to+1} dari ${M} · PPT Transformasi PAK`;capBox.appendChild(capIn);
     fadeCaption(turn.t);
   }else{
-    const p=el('p','sb-caption');p.textContent=PAGES[idx].title;capBox.appendChild(p);
+    const p=el('p','sb-caption');p.textContent=`Halaman ${idx+1} dari ${M} · PPT Transformasi PAK`;capBox.appendChild(p);
   }
 }
 let capOut=null,capIn=null;
@@ -867,6 +923,8 @@ stage.addEventListener('pointerdown',e=>{
   if(!onBook||introOn)return;
   const r=bookRect();
   const dir=(e.clientX-r.left)/r.width>0.5?'next':'prev';
+  clearFlipClasses();
+  book.classList.add(dir==='next'?'flip-forward':'flip-backward');
   startTurn(dir,0);
   drag={dir:dir,x0:e.clientX,w:r.width,moved:0,vel:0,tPrev:performance.now()};
 });
@@ -1085,23 +1143,46 @@ function playPaperScrub(vel){
   }catch(e){}
 }
 
+function clearFlipClasses(){
+  book.classList.remove('flip-forward', 'flip-backward');
+}
+
 function commit(v0){
   if(!turn)return;
-  if(REDUCED){idx=turn.to;turn=null;paint();return;}
+  if(REDUCED){idx=turn.to;turn=null;clearFlipClasses();paint();return;}
   playPaperSound(turn.dir,v0||0);
-  animateTo(1,()=>{idx=turn.to;turn=null;paint();},92,18.5,v0||0);
+  /* k=40, c=12.8 creates an ultra-smooth, luxurious ~680ms physical flip */
+  animateTo(1,()=>{idx=turn.to;turn=null;clearFlipClasses();paint();},40,12.8,v0||0);
   kick();
 }
 function cancel(v0){
   if(!turn)return;
   playPaperSound(turn.dir==='next'?'prev':'next',v0||0);
-  animateTo(0,()=>{turn=null;paint();},100,19.5,v0||0);
+  animateTo(0,()=>{turn=null;clearFlipClasses();paint();},46,13.5,v0||0);
   kick();
 }
-function step(dir){
+
+function nextSlide(){
   if(introOn)endIntro();
-  if(turn){ /* finish whatever is in flight first */ idx=turn.to;turn=null; }
-  startTurn(dir,0);commit(0.45);
+  if(turn){ idx=turn.to;turn=null;paint(); }
+  clearFlipClasses();
+  book.classList.add('flip-forward');
+  startTurn('next',0);
+  commit(0.35);
+}
+
+function prevSlide(){
+  if(introOn)endIntro();
+  if(turn){ idx=turn.to;turn=null;paint(); }
+  clearFlipClasses();
+  book.classList.add('flip-backward');
+  startTurn('prev',0);
+  commit(0.35);
+}
+
+function step(dir){
+  if(dir==='next') nextSlide();
+  else prevSlide();
 }
 function goTo(i){
   if(introOn)endIntro();
@@ -1109,17 +1190,22 @@ function goTo(i){
   if(turn){idx=turn.to;turn=null;}
   const fwd=(i-idx+M)%M, back=(idx-i+M)%M;
   if(Math.min(fwd,back)===1){step(fwd===1?'next':'prev');return;}
-  idx=i;paint();
+  idx=i;clearFlipClasses();paint();
 }
-document.getElementById('sbLeft').onclick=()=>step('prev');
-document.getElementById('sbRight').onclick=()=>step('next');
+document.getElementById('sbLeft').onclick=()=>prevSlide();
+document.getElementById('sbRight').onclick=()=>nextSlide();
+window.nextSlide=nextSlide;
+window.prevSlide=prevSlide;
 addEventListener('keydown',e=>{
-  if(e.key!=='ArrowLeft'&&e.key!=='ArrowRight')return;
+  if(e.key!=='ArrowLeft'&&e.key!=='ArrowRight'&&e.key!=='PageUp'&&e.key!=='PageDown'&&e.key!=='Home'&&e.key!=='End'&&e.key!==' ')return;
   if(e.metaKey||e.ctrlKey||e.altKey)return;
   const t=e.target;
   if(t&&(t.tagName==='INPUT'||t.tagName==='TEXTAREA'||t.isContentEditable))return;
   e.preventDefault();hideHint();
-  step(e.key==='ArrowRight'?'next':'prev');
+  if(e.key==='ArrowRight'||e.key==='PageDown'||e.key===' ')nextSlide();
+  else if(e.key==='ArrowLeft'||e.key==='PageUp')prevSlide();
+  else if(e.key==='Home')goTo(0);
+  else if(e.key==='End')goTo(M-1);
 });
 document.getElementById('heroDown').onclick=()=>{
   document.getElementById('about').scrollIntoView({behavior:'smooth',block:'start'});
